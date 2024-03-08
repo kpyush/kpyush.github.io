@@ -11,9 +11,12 @@
 
     <script>
         async function init() {
-            const port = await navigator.serial.requestPort();
+            const baudRateInput = prompt("Enter Baud Rate (e.g., 9600):") || '9600';
+            const portConfig = { baudRate: parseInt(baudRateInput, 10) };
 
-            await port.open({ baudRate: 9600 });
+            const port = await navigator.serial.requestPort(portConfig);
+
+            await port.open(portConfig);
 
             document.getElementById('sendButton').addEventListener('click', () => {
                 sendCharacter(port, 'a');
