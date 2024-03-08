@@ -1,2 +1,53 @@
-"Hello World"
-<iframe sandbox="allow-popups allow-scripts allow-modals allow-forms allow-same-origin" style="width:240px;height:240px;" marginwidth="0" marginheight="0" scrolling="no" frameborder="0" src="//ws-in.amazon-adsystem.com/widgets/q?ServiceVersion=20070822&OneJS=1&Operation=GetAdHtml&MarketPlace=IN&source=ss&ref=as_ss_li_til&ad_type=product_link&tracking_id=microstack-21&language=en_IN&marketplace=amazon&region=IN&placement=303060912X&asins=303060912X&linkId=ea119be2e8000acf14ee7455eea21a02&show_border=true&link_opens_in_new_window=true"></iframe>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Web Serial API Example</title>
+</head>
+<body>
+    <button id="sendButton">Send "a"</button>
+    <div id="serialOutput"></div>
+
+    <script>
+        async function init() {
+            const port = await navigator.serial.requestPort();
+
+            await port.open({ baudRate: 9600 });
+
+            document.getElementById('sendButton').addEventListener('click', () => {
+                sendCharacter(port, 'a');
+            });
+
+            readData(port);
+        }
+
+        async function sendCharacter(port, char) {
+            const writer = port.writable.getWriter();
+            await writer.write(new TextEncoder().encode(char));
+            writer.releaseLock();
+        }
+
+        async function readData(port) {
+            const reader = port.readable.getReader();
+
+            while (true) {
+                const { value, done } = await reader.read();
+
+                if (done) {
+                    reader.releaseLock();
+                    break;
+                }
+
+                const receivedChar = new TextDecoder().decode(value);
+                document.getElementById('serialOutput').textContent += receivedChar;
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            navigator.serial.addEventListener('connect', init);
+            navigator.serial.addEventListener('disconnect', () => location.reload());
+        });
+    </script>
+</body>
+</html>
