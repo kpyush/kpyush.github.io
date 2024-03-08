@@ -6,32 +6,43 @@
     <title>Web Serial API Example</title>
 </head>
 <body>
-    <button id="sendButton">Send "a"</button>
+    <label for="baudRateInput">Baud Rate:</label>
+    <input type="number" id="baudRateInput" value="9600">
+    <button id="connectButton">Connect</button>
+    <button id="sendButton" disabled>Send "a"</button>
     <div id="serialOutput"></div>
 
     <script>
+        let port;
+
         async function init() {
-            const baudRateInput = prompt("Enter Baud Rate (e.g., 9600):") || '9600';
+            const baudRateInput = document.getElementById('baudRateInput').value;
             const portConfig = { baudRate: parseInt(baudRateInput, 10) };
 
-            const port = await navigator.serial.requestPort(portConfig);
+            try {
+                port = await navigator.serial.requestPort(portConfig);
+                await port.open(portConfig);
 
-            await port.open(portConfig);
+                document.getElementById('connectButton').disabled = true;
+                document.getElementById('sendButton').disabled = false;
 
-            document.getElementById('sendButton').addEventListener('click', () => {
-                sendCharacter(port, 'a');
-            });
+                document.getElementById('sendButton').addEventListener('click', () => {
+                    sendCharacter('a');
+                });
 
-            readData(port);
+                readData();
+            } catch (error) {
+                console.error('Error connecting to serial port:', error);
+            }
         }
 
-        async function sendCharacter(port, char) {
+        async function sendCharacter(char) {
             const writer = port.writable.getWriter();
             await writer.write(new TextEncoder().encode(char));
             writer.releaseLock();
         }
 
-        async function readData(port) {
+        async function readData() {
             const reader = port.readable.getReader();
 
             while (true) {
@@ -48,7 +59,7 @@
         }
 
         document.addEventListener('DOMContentLoaded', () => {
-            navigator.serial.addEventListener('connect', init);
+            document.getElementById('connectButton').addEventListener('click', init);
             navigator.serial.addEventListener('disconnect', () => location.reload());
         });
     </script>
